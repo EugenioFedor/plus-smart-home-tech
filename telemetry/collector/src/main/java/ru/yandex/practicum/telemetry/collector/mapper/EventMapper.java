@@ -1,35 +1,9 @@
 package ru.yandex.practicum.telemetry.collector.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.kafka.telemetry.event.ActionTypeAvro;
-import ru.yandex.practicum.kafka.telemetry.event.ClimateSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.ConditionOperationAvro;
-import ru.yandex.practicum.kafka.telemetry.event.ConditionTypeAvro;
-import ru.yandex.practicum.kafka.telemetry.event.DeviceActionAvro;
-import ru.yandex.practicum.kafka.telemetry.event.DeviceAddedEventAvro;
-import ru.yandex.practicum.kafka.telemetry.event.DeviceRemovedEventAvro;
-import ru.yandex.practicum.kafka.telemetry.event.DeviceTypeAvro;
-import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
-import ru.yandex.practicum.kafka.telemetry.event.LightSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.ScenarioAddedEventAvro;
-import ru.yandex.practicum.kafka.telemetry.event.ScenarioConditionAvro;
-import ru.yandex.practicum.kafka.telemetry.event.ScenarioRemovedEventAvro;
-import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
-import ru.yandex.practicum.kafka.telemetry.event.SwitchSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro;
-import ru.yandex.practicum.telemetry.collector.dto.hub.DeviceAddedEvent;
-import ru.yandex.practicum.telemetry.collector.dto.hub.DeviceRemovedEvent;
-import ru.yandex.practicum.telemetry.collector.dto.hub.HubEvent;
-import ru.yandex.practicum.telemetry.collector.dto.hub.ScenarioAddedEvent;
-import ru.yandex.practicum.telemetry.collector.dto.hub.ScenarioCondition;
-import ru.yandex.practicum.telemetry.collector.dto.hub.ScenarioRemovedEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.ClimateSensorEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.LightSensorEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.MotionSensorEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.SensorEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.SwitchSensorEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.TemperatureSensorEvent;
+import ru.yandex.practicum.kafka.telemetry.event.*;
+import ru.yandex.practicum.telemetry.collector.dto.hub.*;
+import ru.yandex.practicum.telemetry.collector.dto.sensor.*;
 
 import java.util.List;
 
@@ -40,7 +14,7 @@ public class EventMapper {
         return SensorEventAvro.newBuilder()
                 .setId(event.getId())
                 .setHubId(event.getHubId())
-                .setTimestamp(event.getTimestamp().toEpochMilli())
+                .setTimestamp(event.getTimestamp())
                 .setPayload(toSensorPayload(event))
                 .build();
     }

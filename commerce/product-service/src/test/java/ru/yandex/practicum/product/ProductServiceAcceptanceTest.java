@@ -18,9 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -32,6 +30,18 @@ class ProductServiceAcceptanceTest {
 
     @Autowired
     private ObjectMapper json;
+
+    private static int status(MvcResult result) {
+        return result.getResponse().getStatus();
+    }
+
+    private static Long asLong(Object value) {
+        return value == null ? null : ((Number) value).longValue();
+    }
+
+    private static BigDecimal asDecimal(Object value) {
+        return new BigDecimal(value.toString());
+    }
 
     @Test
     void shouldCreateCategoryAndProductThenFindProductThroughCatalogEndpoints() throws Exception {
@@ -153,13 +163,9 @@ class ProductServiceAcceptanceTest {
 
     private MvcResult postJson(String url, Object body) throws Exception {
         return mvc.perform(post(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(body)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(body)))
                 .andReturn();
-    }
-
-    private static int status(MvcResult result) {
-        return result.getResponse().getStatus();
     }
 
     private Map<String, Object> readMap(MvcResult result) throws Exception {
@@ -170,13 +176,5 @@ class ProductServiceAcceptanceTest {
     private List<Map<String, Object>> readList(MvcResult result) throws Exception {
         return json.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
         });
-    }
-
-    private static Long asLong(Object value) {
-        return value == null ? null : ((Number) value).longValue();
-    }
-
-    private static BigDecimal asDecimal(Object value) {
-        return new BigDecimal(value.toString());
     }
 }
