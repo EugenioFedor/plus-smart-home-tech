@@ -1,4 +1,4 @@
-package ru.yandex.practicum.telemetry.collector.kafka;
+package ru.yandex.practicum.kafka.telemetry.serialization;
 
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class AvroSerializer implements Serializer<SpecificRecordBase> {
+
     @Override
     public byte[] serialize(String topic, SpecificRecordBase data) {
         if (data == null) {
@@ -17,13 +18,22 @@ public class AvroSerializer implements Serializer<SpecificRecordBase> {
         }
 
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            DatumWriter<SpecificRecordBase> writer = new SpecificDatumWriter<>(data.getSchema());
-            BinaryEncoder encoder = org.apache.avro.io.EncoderFactory.get().binaryEncoder(output, null);
+            DatumWriter<SpecificRecordBase> writer =
+                    new SpecificDatumWriter<>(data.getSchema());
+
+            BinaryEncoder encoder =
+                    org.apache.avro.io.EncoderFactory.get()
+                            .binaryEncoder(output, null);
+
             writer.write(data, encoder);
             encoder.flush();
+
             return output.toByteArray();
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to serialize Avro event", e);
+            throw new IllegalStateException(
+                    "Failed to serialize Avro event",
+                    e
+            );
         }
     }
 }

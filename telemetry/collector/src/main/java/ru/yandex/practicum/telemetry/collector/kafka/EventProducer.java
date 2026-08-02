@@ -1,32 +1,51 @@
 package ru.yandex.practicum.telemetry.collector.kafka;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.telemetry.collector.dto.hub.HubEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.SensorEvent;
-import ru.yandex.practicum.telemetry.collector.mapper.EventMapper;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class EventProducer {
+
     private final Producer<String, SpecificRecordBase> producer;
-    private final EventMapper mapper;
 
-    @Value("${collector.kafka.topics.sensors}")
-    private String sensorsTopic;
+    public void send(
+            String topic,
+            String key,
+            long timestamp,
+            SpecificRecordBase event
+    ) {
+        ProducerRecord<String, SpecificRecordBase> record =
+                new ProducerRecord<>(
+                        topic,
+                        null,
+                        timestamp,
+                        key,
+                        event
+                );
 
-    @Value("${collector.kafka.topics.hubs}")
-    private String hubsTopic;
+        producer.send(record, (metadata, exception) -> {
+            if (exception != null) {
+                log.error(
+                        "Failed to send event to topic {} with key {}",
+                        topic,
+                        key,
+                        exception
+                );
+                return;
+            }
 
-    public void send(SensorEvent event) {
-        producer.send(new ProducerRecord<>(sensorsTopic, event.getHubId(), mapper.toAvro(event)));
-    }
-
-    public void send(HubEvent event) {
-        producer.send(new ProducerRecord<>(hubsTopic, event.getHubId(), mapper.toAvro(event)));
+            log.debug(
+                    "Event sent to topic {}, partition {}, offset {}",
+                    metadata.topic(),
+                    metadata.partition(),
+                    metadata.offset()
+            );
+        });
     }
 }
