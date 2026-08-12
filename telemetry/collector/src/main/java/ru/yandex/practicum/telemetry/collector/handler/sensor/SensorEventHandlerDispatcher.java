@@ -2,7 +2,7 @@ package ru.yandex.practicum.telemetry.collector.handler.sensor;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.SensorEvent;
+import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
 import ru.yandex.practicum.telemetry.collector.handler.EventHandler;
 
 import java.util.List;
@@ -11,15 +11,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SensorEventHandlerDispatcher {
 
-    private final List<EventHandler<SensorEvent>> handlers;
+    private final List<EventHandler<SensorEventProto>> handlers;
 
-    public void handle(SensorEvent event) {
+    public void handle(SensorEventProto event) {
         handlers.stream()
                 .filter(handler -> handler.canHandle(event))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No handler found for sensor event: " +
-                                event.getClass().getName()
+                                event.getPayloadCase()
                 ))
                 .handle(event);
     }

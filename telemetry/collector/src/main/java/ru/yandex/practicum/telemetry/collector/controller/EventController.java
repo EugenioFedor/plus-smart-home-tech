@@ -1,38 +1,51 @@
 package ru.yandex.practicum.telemetry.collector.controller;
 
-import jakarta.validation.Valid;
+import com.google.protobuf.Empty;
+import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.telemetry.collector.dto.hub.HubEvent;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.SensorEvent;
+import net.devh.boot.grpc.server.service.GrpcService;
+import ru.yandex.practicum.grpc.telemetry.collector.CollectorControllerGrpc;
+import ru.yandex.practicum.grpc.telemetry.event.HubEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
 import ru.yandex.practicum.telemetry.collector.handler.hub.HubEventHandlerDispatcher;
 import ru.yandex.practicum.telemetry.collector.handler.sensor.SensorEventHandlerDispatcher;
 
-@RestController
-@RequestMapping("/events")
+@GrpcService
 @RequiredArgsConstructor
-public class EventController {
+public class EventController
+        extends CollectorControllerGrpc.CollectorControllerImplBase {
 
     private final SensorEventHandlerDispatcher sensorDispatcher;
     private final HubEventHandlerDispatcher hubDispatcher;
 
-    @PostMapping("/sensors")
-    public ResponseEntity<Void> collectSensorEvent(
-            @Valid @RequestBody SensorEvent event
+    @Override
+    public void collectSensorEvent(
+            SensorEventProto request,
+            StreamObserver<Empty> responseObserver
     ) {
-        sensorDispatcher.handle(event);
-        return ResponseEntity.ok().build();
+        try {
+            sensorDispatcher.handle(request);
+
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(Status.fromThrowable(e).asRuntimeException());
+        }
     }
 
-    @PostMapping("/hubs")
-    public ResponseEntity<Void> collectHubEvent(
-            @Valid @RequestBody HubEvent event
+    @Override
+    public void collectHubEvent(
+            HubEventProto request,
+            StreamObserver<Empty> responseObserver
     ) {
-        hubDispatcher.handle(event);
-        return ResponseEntity.ok().build();
+        try {
+            hubDispatcher.handle(request);
+
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(Status.fromThrowable(e).asRuntimeException());
+        }
     }
 }

@@ -1,9 +1,12 @@
 package ru.yandex.practicum.telemetry.collector.mapper;
 
+import com.google.protobuf.Timestamp;
+import ru.yandex.practicum.grpc.telemetry.event.DeviceActionProto;
+import ru.yandex.practicum.grpc.telemetry.event.HubEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.ScenarioConditionProto;
+import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
 import ru.yandex.practicum.kafka.telemetry.event.*;
-import ru.yandex.practicum.telemetry.collector.dto.hub.*;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.*;
-
+import java.time.Instant;
 import java.util.List;
 
 public final class EventMapper {
@@ -11,108 +14,183 @@ public final class EventMapper {
     private EventMapper() {
     }
 
-    public static SensorEventAvro toAvro(SensorEvent event) {
+    public static SensorEventAvro toAvro(SensorEventProto event) {
         return SensorEventAvro.newBuilder()
                 .setId(event.getId())
                 .setHubId(event.getHubId())
-                .setTimestamp(event.getTimestamp())
+                .setTimestamp(toInstant(event.getTimestamp()))
                 .setPayload(toSensorPayload(event))
                 .build();
     }
 
-    public static HubEventAvro toAvro(HubEvent event) {
+    public static HubEventAvro toAvro(HubEventProto event) {
         return HubEventAvro.newBuilder()
                 .setHubId(event.getHubId())
-                .setTimestamp(event.getTimestamp().toEpochMilli())
+                .setTimestamp(toEpochMillis(event.getTimestamp()))
                 .setPayload(toHubPayload(event))
                 .build();
     }
 
-    private static Object toSensorPayload(SensorEvent event) {
-        return switch (event) {
-            case ClimateSensorEvent e -> ClimateSensorAvro.newBuilder()
-                    .setTemperatureC(e.getTemperatureC())
-                    .setHumidity(e.getHumidity())
-                    .setCo2Level(e.getCo2Level())
-                    .build();
+    private static Object toSensorPayload(SensorEventProto event) {
+        return switch (event.getPayloadCase()) {
 
-            case LightSensorEvent e -> LightSensorAvro.newBuilder()
-                    .setLinkQuality(e.getLinkQuality())
-                    .setLuminosity(e.getLuminosity())
-                    .build();
+            case CLIMATE_SENSOR -> {
+                var e = event.getClimateSensor();
 
-            case MotionSensorEvent e -> MotionSensorAvro.newBuilder()
-                    .setLinkQuality(e.getLinkQuality())
-                    .setMotion(e.getMotion())
-                    .setVoltage(e.getVoltage())
-                    .build();
+                yield ClimateSensorAvro.newBuilder()
+                        .setTemperatureC(e.getTemperatureC())
+                        .setHumidity(e.getHumidity())
+                        .setCo2Level(e.getCo2Level())
+                        .build();
+            }
 
-            case SwitchSensorEvent e -> SwitchSensorAvro.newBuilder()
-                    .setState(e.getState())
-                    .build();
+            case LIGHT_SENSOR -> {
+                var e = event.getLightSensor();
 
-            case TemperatureSensorEvent e -> TemperatureSensorAvro.newBuilder()
-                    .setTemperatureC(e.getTemperatureC())
-                    .setTemperatureF(e.getTemperatureF())
-                    .build();
+                yield LightSensorAvro.newBuilder()
+                        .setLinkQuality(e.getLinkQuality())
+                        .setLuminosity(e.getLuminosity())
+                        .build();
+            }
+
+            case MOTION_SENSOR -> {
+                var e = event.getMotionSensor();
+
+                yield MotionSensorAvro.newBuilder()
+                        .setLinkQuality(e.getLinkQuality())
+                        .setMotion(e.getMotion())
+                        .setVoltage(e.getVoltage())
+                        .build();
+            }
+
+            case SWITCH_SENSOR -> {
+                var e = event.getSwitchSensor();
+
+                yield SwitchSensorAvro.newBuilder()
+                        .setState(e.getState())
+                        .build();
+            }
+
+            case TEMPERATURE_SENSOR -> {
+                var e = event.getTemperatureSensor();
+
+                yield TemperatureSensorAvro.newBuilder()
+                        .setTemperatureC(e.getTemperatureC())
+                        .setTemperatureF(e.getTemperatureF())
+                        .build();
+            }
 
             default -> throw new IllegalArgumentException(
-                    "Unsupported sensor event: " + event.getClass()
+                    "Unsupported sensor payload: " + event.getPayloadCase()
             );
         };
     }
 
-    private static Object toHubPayload(HubEvent event) {
-        return switch (event) {
-            case DeviceAddedEvent e -> DeviceAddedEventAvro.newBuilder()
-                    .setId(e.getId())
-                    .setDeviceType(DeviceTypeAvro.valueOf(e.getDeviceType().name()))
-                    .build();
+    private static Object toHubPayload(HubEventProto event) {
+        return switch (event.getPayloadCase()) {
 
-            case DeviceRemovedEvent e -> DeviceRemovedEventAvro.newBuilder()
-                    .setId(e.getId())
-                    .build();
+            case DEVICE_ADDED -> {
+                var e = event.getDeviceAdded();
 
-            case ScenarioAddedEvent e -> ScenarioAddedEventAvro.newBuilder()
-                    .setName(e.getName())
-                    .setConditions(mapConditions(e.getConditions()))
-                    .setActions(mapActions(e.getActions()))
-                    .build();
+                yield DeviceAddedEventAvro.newBuilder()
+                        .setId(e.getId())
+                        .setDeviceType(
+                                DeviceTypeAvro.valueOf(e.getType().name())
+                        )
+                        .build();
+            }
 
-            case ScenarioRemovedEvent e -> ScenarioRemovedEventAvro.newBuilder()
-                    .setName(e.getName())
-                    .build();
+            case DEVICE_REMOVED -> {
+                var e = event.getDeviceRemoved();
+
+                yield DeviceRemovedEventAvro.newBuilder()
+                        .setId(e.getId())
+                        .build();
+            }
+
+            case SCENARIO_ADDED -> {
+                var e = event.getScenarioAdded();
+
+                yield ScenarioAddedEventAvro.newBuilder()
+                        .setName(e.getName())
+                        .setConditions(mapConditions(e.getConditionList()))
+                        .setActions(mapActions(e.getActionList()))
+                        .build();
+            }
+
+            case SCENARIO_REMOVED -> {
+                var e = event.getScenarioRemoved();
+
+                yield ScenarioRemovedEventAvro.newBuilder()
+                        .setName(e.getName())
+                        .build();
+            }
 
             default -> throw new IllegalArgumentException(
-                    "Unsupported hub event: " + event.getClass()
+                    "Unsupported hub payload: " + event.getPayloadCase()
             );
         };
     }
 
     private static List<ScenarioConditionAvro> mapConditions(
-            List<ScenarioCondition> conditions
+            List<ScenarioConditionProto> conditions
     ) {
         return conditions.stream()
                 .map(condition -> ScenarioConditionAvro.newBuilder()
                         .setSensorId(condition.getSensorId())
-                        .setType(ConditionTypeAvro.valueOf(condition.getType().name()))
-                        .setOperation(ConditionOperationAvro.valueOf(
-                                condition.getOperation().name()
-                        ))
-                        .setValue(condition.getValue())
+                        .setType(
+                                ConditionTypeAvro.valueOf(
+                                        condition.getType().name()
+                                )
+                        )
+                        .setOperation(
+                                ConditionOperationAvro.valueOf(
+                                        condition.getOperation().name()
+                                )
+                        )
+                        .setValue(
+                                switch (condition.getValueCase()) {
+                                    case BOOL_VALUE -> condition.getBoolValue();
+                                    case INT_VALUE -> condition.getIntValue();
+                                    default -> throw new IllegalArgumentException(
+                                            "Unsupported condition value: "
+                                                    + condition.getValueCase()
+                                    );
+                                }
+                        )
                         .build())
                 .toList();
     }
 
     private static List<DeviceActionAvro> mapActions(
-            List<DeviceAction> actions
+            List<DeviceActionProto> actions
     ) {
         return actions.stream()
                 .map(action -> DeviceActionAvro.newBuilder()
                         .setSensorId(action.getSensorId())
-                        .setType(ActionTypeAvro.valueOf(action.getType().name()))
-                        .setValue(action.getValue())
+                        .setType(
+                                ActionTypeAvro.valueOf(
+                                        action.getType().name()
+                                )
+                        )
+                        .setValue(
+                                action.hasValue()
+                                        ? action.getValue()
+                                        : null
+                        )
                         .build())
                 .toList();
+    }
+
+    private static Instant toInstant(Timestamp timestamp) {
+        return Instant.ofEpochSecond(
+                timestamp.getSeconds(),
+                timestamp.getNanos()
+        );
+    }
+
+    private static long toEpochMillis(Timestamp timestamp) {
+        return timestamp.getSeconds() * 1000
+                + timestamp.getNanos() / 1_000_000;
     }
 }

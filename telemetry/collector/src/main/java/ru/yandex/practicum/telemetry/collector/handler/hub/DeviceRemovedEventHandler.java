@@ -1,17 +1,17 @@
 package ru.yandex.practicum.telemetry.collector.handler.hub;
 
+import com.google.protobuf.Timestamp;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.telemetry.collector.dto.hub.DeviceRemovedEvent;
-import ru.yandex.practicum.telemetry.collector.dto.hub.HubEvent;
+import ru.yandex.practicum.grpc.telemetry.event.HubEventProto;
 import ru.yandex.practicum.telemetry.collector.handler.EventHandler;
 import ru.yandex.practicum.telemetry.collector.kafka.EventProducer;
 import ru.yandex.practicum.telemetry.collector.mapper.EventMapper;
 
 @Component
 @RequiredArgsConstructor
-public class DeviceRemovedEventHandler implements EventHandler<HubEvent> {
+public class DeviceRemovedEventHandler implements EventHandler<HubEventProto> {
 
     private final EventProducer producer;
 
@@ -19,19 +19,23 @@ public class DeviceRemovedEventHandler implements EventHandler<HubEvent> {
     private String topic;
 
     @Override
-    public boolean canHandle(HubEvent event) {
-        return event instanceof DeviceRemovedEvent;
+    public boolean canHandle(HubEventProto event) {
+        return event.getPayloadCase()
+                == HubEventProto.PayloadCase.DEVICE_REMOVED;
     }
 
     @Override
-    public void handle(HubEvent event) {
-        DeviceRemovedEvent deviceEvent = (DeviceRemovedEvent) event;
-
+    public void handle(HubEventProto event) {
         producer.send(
                 topic,
-                deviceEvent.getHubId(),
-                deviceEvent.getTimestamp().toEpochMilli(),
-                EventMapper.toAvro(deviceEvent)
+                event.getHubId(),
+                toEpochMillis(event.getTimestamp()),
+                EventMapper.toAvro(event)
         );
+    }
+
+    private long toEpochMillis(Timestamp timestamp) {
+        return timestamp.getSeconds() * 1000
+                + timestamp.getNanos() / 1_000_000;
     }
 }
