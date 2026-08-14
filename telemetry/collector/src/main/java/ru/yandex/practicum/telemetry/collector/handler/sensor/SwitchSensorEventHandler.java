@@ -21,7 +21,7 @@ public class SwitchSensorEventHandler implements EventHandler<SensorEventProto> 
     @Override
     public boolean canHandle(SensorEventProto event) {
         return event.getPayloadCase()
-                == SensorEventProto.PayloadCase.LIGHT_SENSOR;
+                == SensorEventProto.PayloadCase.SWITCH_SENSOR;
     }
 
     @Override
