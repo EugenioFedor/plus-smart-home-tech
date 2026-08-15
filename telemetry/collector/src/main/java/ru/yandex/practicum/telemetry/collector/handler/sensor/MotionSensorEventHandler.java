@@ -1,5 +1,6 @@
 package ru.yandex.practicum.telemetry.collector.handler.sensor;
 
+import com.google.protobuf.Timestamp;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -7,7 +8,6 @@ import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
 import ru.yandex.practicum.telemetry.collector.handler.EventHandler;
 import ru.yandex.practicum.telemetry.collector.kafka.EventProducer;
 import ru.yandex.practicum.telemetry.collector.mapper.EventMapper;
-import com.google.protobuf.Timestamp;
 
 @Component
 @RequiredArgsConstructor
