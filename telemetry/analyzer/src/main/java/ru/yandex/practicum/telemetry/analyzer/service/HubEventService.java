@@ -81,19 +81,25 @@ public class HubEventService {
 
     private void handleScenarioAdded(String hubId, ScenarioAddedEventAvro event) {
         Set<String> sensorIds = new HashSet<>();
-        event.getConditions().forEach(c -> sensorIds.add(c.getSensorId()));
-        event.getActions().forEach(a -> sensorIds.add(a.getSensorId()));
 
-        for (String sensorId : sensorIds) {
-            if (sensorRepository.findByIdAndHubId(sensorId, hubId).isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Sensor " + sensorId + " is not registered in hub " + hubId
-                );
-            }
+        event.getConditions()
+                .forEach(c -> sensorIds.add(c.getSensorId()));
+
+        event.getActions()
+                .forEach(a -> sensorIds.add(a.getSensorId()));
+
+        long registeredSensors =
+                sensorRepository.countByIdInAndHubId(sensorIds, hubId);
+
+        if (registeredSensors != sensorIds.size()) {
+            throw new IllegalArgumentException(
+                    "Some sensors are not registered in hub " + hubId
+            );
         }
 
-        Scenario scenario = scenarioRepository.findByHubIdAndName(hubId, event.getName())
-                .orElseGet(() -> new Scenario(hubId, event.getName()));
+        Scenario scenario =
+                scenarioRepository.findByHubIdAndName(hubId, event.getName())
+                        .orElseGet(() -> new Scenario(hubId, event.getName()));
 
         scenario.getConditions().clear();
         scenario.getActions().clear();
@@ -112,7 +118,10 @@ public class HubEventService {
         for (DeviceActionAvro actionAvro : event.getActions()) {
             scenario.getActions().put(
                     actionAvro.getSensorId(),
-                    new Action(actionAvro.getType(), actionAvro.getValue())
+                    new Action(
+                            actionAvro.getType(),
+                            actionAvro.getValue()
+                    )
             );
         }
 

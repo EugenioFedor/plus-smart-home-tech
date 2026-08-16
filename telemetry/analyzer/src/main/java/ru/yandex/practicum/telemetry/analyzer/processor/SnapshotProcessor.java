@@ -37,23 +37,44 @@ public class SnapshotProcessor {
 
     public void start() {
         consumer.subscribe(List.of(topic));
+
+        int processed = 0;
+
         try {
             while (true) {
-                ConsumerRecords<String, SensorsSnapshotAvro> records = consumer.poll(Duration.ofSeconds(1));
+                ConsumerRecords<String, SensorsSnapshotAvro> records =
+                        consumer.poll(Duration.ofSeconds(1));
+
                 for (ConsumerRecord<String, SensorsSnapshotAvro> record : records) {
                     try {
                         analysisService.analyze(record.value());
-                        commitRecord(record);
+                        processed++;
+
+                        if (processed % 100 == 0) {
+                            consumer.commitAsync();
+                        }
+
                     } catch (Exception e) {
-                        log.error("Failed to analyze snapshot at {}-{} offset {}",
-                                record.topic(), record.partition(), record.offset(), e);
+                        log.error(
+                                "Failed to analyze snapshot at {}-{} offset {}",
+                                record.topic(),
+                                record.partition(),
+                                record.offset(),
+                                e
+                        );
                     }
                 }
             }
+
         } catch (WakeupException ignored) {
             // normal shutdown
+
         } finally {
-            consumer.close();
+            try {
+                consumer.commitSync();
+            } finally {
+                consumer.close();
+            }
         }
     }
 

@@ -5,7 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
+import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 
 @Slf4j
 @Component
@@ -14,7 +17,29 @@ public class EventProducer {
 
     private final Producer<String, SpecificRecordBase> producer;
 
-    public void send(
+    @Value("${collector.kafka.topics.hubs}")
+    private String hubsTopic;
+
+    @Value("${collector.kafka.topics.sensors}")
+    private String sensorsTopic;
+
+    public void sendHubEvent(
+            String key,
+            long timestamp,
+            HubEventAvro event
+    ) {
+        send(hubsTopic, key, timestamp, event);
+    }
+
+    public void sendSensorEvent(
+            String key,
+            long timestamp,
+            SensorEventAvro event
+    ) {
+        send(sensorsTopic, key, timestamp, event);
+    }
+
+    private void send(
             String topic,
             String key,
             long timestamp,

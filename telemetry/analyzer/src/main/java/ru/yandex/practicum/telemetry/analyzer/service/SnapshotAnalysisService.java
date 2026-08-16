@@ -1,6 +1,8 @@
 package ru.yandex.practicum.telemetry.analyzer.service;
 
 import com.google.protobuf.Timestamp;
+import io.grpc.StatusRuntimeException;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.grpc.telemetry.event.ActionTypeProto;
@@ -17,9 +19,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.OptionalInt;
 
+@Slf4j
 @Service
 public class SnapshotAnalysisService {
 
+    private static final int MAX_RETRIES = 3;
     private final ScenarioRepository scenarioRepository;
     private final HubRouterControllerBlockingStub hubRouterClient;
 
@@ -28,6 +32,29 @@ public class SnapshotAnalysisService {
             @GrpcClient("hub-router") HubRouterControllerBlockingStub hubRouterClient) {
         this.scenarioRepository = scenarioRepository;
         this.hubRouterClient = hubRouterClient;
+    }
+
+    private void sendAction(DeviceActionRequest request) {
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                hubRouterClient.handleDeviceAction(request);
+                return;
+
+            } catch (StatusRuntimeException e) {
+                log.warn(
+                        "Ошибка gRPC при отправке действия. Попытка {}/{}, hubId={}, scenario={}",
+                        attempt,
+                        MAX_RETRIES,
+                        request.getHubId(),
+                        request.getScenarioName(),
+                        e
+                );
+
+                if (attempt == MAX_RETRIES) {
+                    throw e;
+                }
+            }
+        }
     }
 
     public void analyze(SensorsSnapshotAvro snapshot) {
@@ -125,6 +152,6 @@ public class SnapshotAnalysisService {
                 .setTimestamp(timestamp)
                 .build();
 
-        hubRouterClient.handleDeviceAction(request);
+        sendAction(request);
     }
 }

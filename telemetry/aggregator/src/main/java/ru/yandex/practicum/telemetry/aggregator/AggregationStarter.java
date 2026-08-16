@@ -81,6 +81,23 @@ public class AggregationStarter {
                         snapshot
                 );
 
-        producer.send(record);
+        producer.send(record, (metadata, exception) -> {
+            if (exception != null) {
+                log.error(
+                        "Не удалось отправить snapshot хаба {} в Kafka",
+                        snapshot.getHubId(),
+                        exception
+                );
+                return;
+            }
+
+            log.debug(
+                    "Snapshot хаба {} отправлен в topic {}, partition {}, offset {}",
+                    snapshot.getHubId(),
+                    metadata.topic(),
+                    metadata.partition(),
+                    metadata.offset()
+            );
+        });
     }
 }
