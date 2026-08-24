@@ -66,4 +66,14 @@ public class GlobalExceptionHandler {
         log.error("Внутренняя ошибка сервера", e);
         return new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Внутренняя ошибка сервера");
     }
+
+    @ExceptionHandler(InvalidStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleInvalidState(InvalidStateException e) {
+        log.warn("Некорректное состояние: {}", e.getMessage());
+        return new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                e.getMessage()
+        );
+    }
 }
