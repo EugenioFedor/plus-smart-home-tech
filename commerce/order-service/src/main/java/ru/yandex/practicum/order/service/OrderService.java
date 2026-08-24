@@ -11,17 +11,19 @@ import ru.yandex.practicum.order.entity.OrderItem;
 import ru.yandex.practicum.order.entity.OrderStatus;
 import ru.yandex.practicum.order.exception.NotFoundException;
 import ru.yandex.practicum.order.repository.OrderRepository;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class OrderService {
 
     private final OrderRepository orderRepository;
 
+    @Transactional
     public OrderDto createOrder(CreateOrderRequest request) {
         Order order = new Order();
 

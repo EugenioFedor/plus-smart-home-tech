@@ -39,4 +39,14 @@ public class GlobalExceptionHandler {
         log.error("Внутренняя ошибка сервера", e);
         return new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Внутренняя ошибка сервера");
     }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleResourceNotFound(ResourceNotFoundException e) {
+        log.warn("Ресурс не найден: {}", e.getMessage());
+        return new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                e.getMessage()
+        );
+    }
 }
