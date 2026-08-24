@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: analyzer
+  datasource:
+    url: ${ANALYZER_DB_URL:jdbc:postgresql://localhost:5432/telemetry_analyzer}
+    username: ${ANALYZER_DB_USER:dbuser}
+    password: ${ANALYZER_DB_PASSWORD:12345}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  sql:
+    init:
+      mode: always
+
+analyzer:
+  kafka:
+    bootstrap-servers: localhost:9092
+    hubs-group-id: analyzer-hubs
+    hubs-client-id: analyzer-hub-events
+    snapshots-group-id: analyzer-snapshots
+    snapshots-client-id: analyzer-snapshots
+    topics:
+      hubs: ${HUBS_TOPIC:telemetry.hubs.v1}
+      snapshots: ${SNAPSHOTS_TOPIC:telemetry.snapshots.v1}
+
+grpc:
+  client:
+    hub-router:
+      address: ${HUB_ROUTER_ADDRESS:static://localhost:59090}
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext

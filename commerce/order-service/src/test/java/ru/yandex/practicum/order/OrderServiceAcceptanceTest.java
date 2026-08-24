@@ -31,6 +31,18 @@ class OrderServiceAcceptanceTest {
     @Autowired
     private ObjectMapper json;
 
+    private static int status(MvcResult result) {
+        return result.getResponse().getStatus();
+    }
+
+    private static Long asLong(Object value) {
+        return value == null ? null : ((Number) value).longValue();
+    }
+
+    private static BigDecimal asDecimal(Object value) {
+        return new BigDecimal(value.toString());
+    }
+
     @Test
     void shouldCreateOrderStoreProductSnapshotAndFindOrderByIdAndEmail() throws Exception {
         CreateOrderRequest request = new CreateOrderRequest(
@@ -75,7 +87,7 @@ class OrderServiceAcceptanceTest {
                 .isEqualTo("acceptance-buyer@example.com");
 
         MvcResult byEmailResponse = mvc.perform(get("/api/orders/by-email")
-                .param("email", "acceptance-buyer@example.com"))
+                        .param("email", "acceptance-buyer@example.com"))
                 .andReturn();
 
         assertThat(status(byEmailResponse))
@@ -107,13 +119,9 @@ class OrderServiceAcceptanceTest {
 
     private MvcResult postJson(String url, Object body) throws Exception {
         return mvc.perform(post(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(body)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(body)))
                 .andReturn();
-    }
-
-    private static int status(MvcResult result) {
-        return result.getResponse().getStatus();
     }
 
     private Map<String, Object> readMap(MvcResult result) throws Exception {
@@ -124,13 +132,5 @@ class OrderServiceAcceptanceTest {
     private List<Map<String, Object>> readList(MvcResult result) throws Exception {
         return json.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
         });
-    }
-
-    private static Long asLong(Object value) {
-        return value == null ? null : ((Number) value).longValue();
-    }
-
-    private static BigDecimal asDecimal(Object value) {
-        return new BigDecimal(value.toString());
     }
 }
