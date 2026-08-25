@@ -2,6 +2,7 @@ package ru.yandex.practicum.inventory.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.inventory.dto.InventoryDto;
 import ru.yandex.practicum.inventory.dto.ReserveRequest;
 import ru.yandex.practicum.inventory.dto.ReserveResponse;
@@ -14,12 +15,14 @@ import ru.yandex.practicum.inventory.repository.InventoryRepository;
 
 import java.util.List;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
 
+    @Transactional
     public InventoryDto createInventory(UpdateInventoryRequest request) {
         if (inventoryRepository.existsByProductId(request.productId())) {
             throw new InvalidStateException(
@@ -27,14 +30,15 @@ public class InventoryService {
             );
         }
 
-        Inventory inventory = new Inventory();
-        inventory.setProductId(request.productId());
-        inventory.setQuantity(request.quantity());
-        inventory.setReservedQuantity(0);
+        Inventory inventory = new Inventory(
+                request.productId(),
+                request.quantity()
+        );
 
         return toDto(inventoryRepository.save(inventory));
     }
 
+    @Transactional
     public InventoryDto updateInventory(UpdateInventoryRequest request) {
         Inventory inventory = inventoryRepository.findByProductId(request.productId())
                 .orElseThrow(() ->
@@ -72,6 +76,7 @@ public class InventoryService {
         return toDto(inventory);
     }
 
+    @Transactional
     public ReserveResponse reserveStock(ReserveRequest request) {
         Inventory inventory = inventoryRepository.findByProductId(request.productId())
                 .orElseThrow(() ->

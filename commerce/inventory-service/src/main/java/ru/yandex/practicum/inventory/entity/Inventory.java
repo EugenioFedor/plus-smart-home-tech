@@ -28,6 +28,12 @@ public class Inventory {
     @Version
     private Long version;
 
+    public Inventory(Long productId, Integer quantity) {
+        this.productId = productId;
+        this.quantity = quantity;
+        this.reservedQuantity = 0;
+    }
+
     public int getAvailableQuantity() {
         return quantity - reservedQuantity;
     }
