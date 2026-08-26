@@ -115,4 +115,32 @@ public class InventoryService {
                 inventory.getAvailableQuantity()
         );
     }
+
+    @Transactional
+    public ReserveResponse releaseStock(ReserveRequest request) {
+        Inventory inventory = inventoryRepository.findByProductId(request.productId())
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Inventory for product " + request.productId() + " not found"
+                        )
+                );
+
+        if (request.quantity() > inventory.getReservedQuantity()) {
+            throw new IllegalArgumentException(
+                    "Cannot release more stock than currently reserved"
+            );
+        }
+
+        inventory.setReservedQuantity(
+                inventory.getReservedQuantity() - request.quantity()
+        );
+
+        Inventory saved = inventoryRepository.save(inventory);
+
+        return new ReserveResponse(
+                true,
+                saved.getAvailableQuantity(),
+                "Резерв успешно снят"
+        );
+    }
 }
