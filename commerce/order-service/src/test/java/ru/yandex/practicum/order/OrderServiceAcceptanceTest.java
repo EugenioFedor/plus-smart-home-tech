@@ -7,17 +7,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import ru.yandex.practicum.order.client.InventoryClient;
 import ru.yandex.practicum.order.client.ProductClient;
-import ru.yandex.practicum.order.dto.CreateOrderRequest;
-import ru.yandex.practicum.order.dto.InventoryRequest;
-import ru.yandex.practicum.order.dto.InventoryResponse;
-import ru.yandex.practicum.order.dto.OrderItemRequest;
-import ru.yandex.practicum.order.dto.ProductResponse;
+import ru.yandex.practicum.order.dto.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -45,6 +41,18 @@ class OrderServiceAcceptanceTest {
 
     @MockBean
     private InventoryClient inventoryClient;
+
+    private static int status(MvcResult result) {
+        return result.getResponse().getStatus();
+    }
+
+    private static Long asLong(Object value) {
+        return value == null ? null : ((Number) value).longValue();
+    }
+
+    private static BigDecimal asDecimal(Object value) {
+        return new BigDecimal(value.toString());
+    }
 
     @BeforeEach
     void setUp() {
@@ -76,18 +84,6 @@ class OrderServiceAcceptanceTest {
                         100,
                         "Товар успешно зарезервирован"
                 ));
-    }
-
-    private static int status(MvcResult result) {
-        return result.getResponse().getStatus();
-    }
-
-    private static Long asLong(Object value) {
-        return value == null ? null : ((Number) value).longValue();
-    }
-
-    private static BigDecimal asDecimal(Object value) {
-        return new BigDecimal(value.toString());
     }
 
     @Test
