@@ -15,12 +15,12 @@ public record OrderItemRequest(
         Integer quantity
 ) {
 
-        public OrderItemRequest(
-                Long productId,
-                String productName,
-                Integer quantity,
-                BigDecimal price
-        ) {
-                this(productId, quantity);
-        }
+    public OrderItemRequest(
+            Long productId,
+            String productName,
+            Integer quantity,
+            BigDecimal price
+    ) {
+        this(productId, quantity);
+    }
 }
